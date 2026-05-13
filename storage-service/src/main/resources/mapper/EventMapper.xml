@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zc.storage.mapper.EventMapper">
+
+    <insert id="insertBatch">
+        insert into event_archive (
+            event_id,
+            device_id,
+            event_timestamp,
+            event_type,
+            payload_json,
+            created_at
+        )
+        values
+        <foreach collection="records" item="record" separator=",">
+            (
+                #{record.eventId},
+                #{record.deviceId},
+                #{record.eventTimestamp},
+                #{record.eventType},
+                #{record.payloadJson},
+                #{record.createdAt}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

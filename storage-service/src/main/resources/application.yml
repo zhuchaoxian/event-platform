@@ -1,0 +1,99 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: storage-service
+  cloud:
+    sentinel:
+      enabled: true
+      eager: true
+  datasource:
+    url: ${STORAGE_DB_URL:jdbc:mysql://localhost:3306/event_platform?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true}
+    username: ${STORAGE_DB_USERNAME:root}
+    password: ${STORAGE_DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: HikariPool
+
+      minimum-idle: 10 # 基础链接
+
+      maximum-pool-size: 50 # 已经够单机2000qps 大部分缓存 短sql
+
+      idle-timeout: 600000
+
+      max-lifetime: 1800000 # MySQL 会主动断开长连接。
+
+      connection-timeout: 3000 # 超时直接失败否则线程越来越多容易雪崩
+
+      validation-timeout: 1000
+
+      leak-detection-threshold: 60000
+
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: event-storage-group
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      max-poll-records: ${STORAGE_KAFKA_MAX_POLL_RECORDS:200}
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: org.zc.common
+            value:
+              default:
+                type: org.zc.common.Event
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring:
+          json:
+            add:
+              type:
+                headers: false
+    listener:
+      type: batch
+      ack-mode: batch
+      concurrency: 2
+      missing-topics-fatal: false
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: org.zc.storage.entity
+
+event:
+  topic: event-storage-topic
+  failure-topic: event-failure-topic
+  retry-times: 3
+  batch-size: 200
+  sentinel:
+    enabled: ${STORAGE_SENTINEL_ENABLED:true}
+    persist-qps: 100
+    persist-exception-count: 5
+    degrade-window-seconds: 10
+    min-request-amount: 5
+    stat-interval-ms: 10000
+
+camera:
+  topic: camera-topic
+  failure-topic: camera-failure-topic
+  queue-capacity: 200
+  worker-count: 2
+  batch-size: 200
+  poll-timeout-ms: 500
+  enqueue-retry-times: 3
+  enqueue-retry-backoff-ms: 100
+  db-retry-times: 3
+  sentinel:
+    enabled: ${CAMERA_SENTINEL_ENABLED:true}
+    enqueue-qps: 200
+    persist-qps: 100
+    persist-exception-count: 5
+    degrade-window-seconds: 10
+    min-request-amount: 5
+    stat-interval-ms: 10000

@@ -1,0 +1,54 @@
+# === IDE ===
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+.vscode/
+
+# === Maven ===
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/repository/
+
+# === Node ===
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+
+# === OS ===
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# === Logs ===
+*.log
+logs/
+
+# === Environment & Secrets ===
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.properties
+**/application-local.yml
+**/application-local.properties
+*-local.yml
+*-local.properties
+
+# === AI Tools ===
+.agents/
+.claude/
+.codex/
+skills-lock.json
+
+# === Local Maven Cache ===
+.m2/
+
+# === Temp ===
+*.tmp
+*.bak
+*.orig

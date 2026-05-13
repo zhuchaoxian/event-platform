@@ -1,0 +1,50 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /api/ingest
+
+spring:
+  application:
+    name: ingest-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        spring:
+          json:
+            add:
+              type:
+                headers: false
+
+event:
+  ingest:
+    event-topic: event-topic
+    camera-topic: camera-topic
+    event-mqtt:
+      enabled: false
+      url: tcp://localhost:1883
+      client-id: ingest-service-mqtt-client
+      username:
+      password:
+      topics:
+        - event/#
+      qos:
+        - 1
+    camera-mqtt:
+      enabled: false
+      url: tcp://localhost:1883
+      client-id: ingest-service-camera-mqtt-client
+      username:
+      password:
+      topics:
+        - Camera/#
+      qos:
+        - 1
+
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId:-N/A}]"

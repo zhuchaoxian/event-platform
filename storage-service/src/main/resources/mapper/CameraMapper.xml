@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zc.storage.mapper.CameraMapper">
+
+    <insert id="upsertBatch">
+        insert into db_camera (
+            camera_id,
+            camera_name,
+            latitude,
+            longitude,
+            status,
+            create_at,
+            updated_at
+        )
+        values
+        <foreach collection="records" item="record" separator=",">
+            (
+                #{record.cameraId},
+                #{record.cameraName},
+                #{record.latitude},
+                #{record.longitude},
+                #{record.status},
+                #{record.createdAt},
+                #{record.updatedAt}
+            )
+        </foreach>
+        on duplicate key update
+            camera_name = values(camera_name),
+            latitude = values(latitude),
+            longitude = values(longitude),
+            status = values(status),
+            updated_at = values(updated_at)
+    </insert>
+
+</mapper>

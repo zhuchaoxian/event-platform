@@ -1,0 +1,119 @@
+spring:
+  application:
+    name: ai-analysis-service
+
+# AI 服务监听端口，对应网关里 `/api/ai/**` 的目标地址。
+server:
+  port: 8084
+
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId}]"
+
+# 智能运维模块总配置。
+ai:
+  ops:
+    # 总开关。关闭后接口仍可访问，但只会返回禁用提示。
+    enabled: true
+    disabled-message: AI assistant is not configured yet. Please configure ai.ops.model.base-url, ai.ops.model.api-key, and ai.ops.model.model-name.
+    # 系统提示词，约束模型回答风格与工具使用策略。
+    system-prompt: |
+      You are an event-platform operations assistant.
+      Prioritize factual, concise, and production-safe answers.
+      Respond in Simplified Chinese by default.
+      Prefer a one-sentence summary, and add at most one short follow-up sentence when needed.
+      Avoid Markdown tables, long headings, and report-style sections.
+      For incident analysis, provide the conclusion, the most likely cause, and the first recommended action only.
+      For Kafka metric requests, use the Kafka metrics tool before answering.
+      Never fabricate metrics, logs, or documents.
+      If the user input is missing required parameters, ask for the missing fields or return the provided repair suggestion.
+      When knowledge or logs are provided in context, ground the answer in them and mention uncertainty if evidence is missing.
+    memory:
+      # 保留最近多少条会话消息。
+      max-messages: 20
+      # Redis 中 ChatMemory 的 key 前缀。
+      key-prefix: "ai:chat:memory:"
+      # 会话记忆过期时间。
+      ttl: 7d
+      summary-enabled: true
+      summary-key-prefix: "ai:chat:summary:"
+      summary-batch-size: 20
+      summary-retain-messages: 8
+    model:
+      # 当前按 OpenAI 兼容接口接入。
+      provider: openai-compatible
+      base-url: https://api.deepseek.com
+      api-key: ${AI_MODEL_API_KEY:}
+      model-name: deepseek-v4-flash
+      temperature: 0.2
+      timeout: 30s
+    embedding:
+      # RAG 向量化模型配置，可与对话模型分离。
+      enabled: true
+      base-url:
+      api-key:
+      model-name:
+      timeout: 30s
+    rag:
+      # 文档知识库检索配置。
+      enabled: true
+      documents-path: docs/ai-ops
+      recursive: true
+      auto-reindex-on-startup: false
+      index-name: ai_ops_knowledge
+      top-k: 4
+      min-score: 0.35
+      max-segment-size: 800
+      max-overlap-size: 120
+    elasticsearch:
+      # ES 目前主要承担日志检索；知识向量检索后续可再切回 ES。
+      enabled: false
+      url: http://localhost:9200
+      username:
+      password:
+      api-key:
+      knowledge-index-name: ai_ops_knowledge
+      logs-index-pattern: event-platform-logs-*
+      log-size: 3
+    prometheus:
+      # Kafka 指标统一从 Prometheus 查询。
+      enabled: false
+      base-url: http://localhost:9090
+      default-window: 5m
+      timeout: 10s
+    cache:
+      response-key-prefix: "ai:chat:response:"
+      response-ttl: 2m
+      fallback-enabled: true
+    tools:
+      # Agent 可调用工具的开关。
+      kafka-metrics-enabled: true
+      log-search-enabled: true
+    metrics:
+      # 可被 Agent 查询的 Kafka 指标定义。
+      definitions:
+        lag:
+          # 消费组积压量。
+          description: Kafka consumer lag for a consumer group and topic
+          query-template: sum(kafka_consumergroup_lag{topic="%s",consumergroup="%s"})
+          required-params: [topic, group]
+        messages_in:
+          # Topic 每秒写入消息数。
+          description: Kafka topic messages in per second
+          query-template: sum(rate(kafka_server_brokertopicmetrics_messagesin_total{topic="%s"}[%s]))
+          required-params: [topic]
+        bytes_in:
+          # Topic 每秒写入字节数。
+          description: Kafka topic bytes in per second
+          query-template: sum(rate(kafka_server_brokertopicmetrics_bytesin_total{topic="%s"}[%s]))
+          required-params: [topic]
+        bytes_out:
+          # Topic 每秒输出字节数。
+          description: Kafka topic bytes out per second
+          query-template: sum(rate(kafka_server_brokertopicmetrics_bytesout_total{topic="%s"}[%s]))
+          required-params: [topic]
+        under_replicated_partitions:
+          # 副本不足的分区数量。
+          description: Kafka under replicated partitions for broker or cluster
+          query-template: sum(kafka_server_replicamanager_underreplicatedpartitions)
+          required-params: []

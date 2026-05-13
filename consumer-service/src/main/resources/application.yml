@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: consumer-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: event-consumer-group
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: org.zc.common
+            value:
+              default:
+                type: org.zc.common.Event
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring:
+          json:
+            add:
+              type:
+                headers: false
+    listener:
+      concurrency: 3
+      missing-topics-fatal: false
+
+event:
+  consumer:
+    topic: event-topic
+    storage-topic: event-storage-topic
+    failure-topic: event-failure-topic
+    executor:
+      core-size: 4
+      max-size: 8
+      queue-capacity: 200
+      thread-name-prefix: event-consumer-
+
+logging:
+  pattern:
+    level: "%5p [traceId:%X{traceId:-N/A}]"

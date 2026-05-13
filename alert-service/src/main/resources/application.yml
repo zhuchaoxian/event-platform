@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: alert-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+  datasource:
+    url: ${ALERT_DB_URL:jdbc:mysql://localhost:3306/event_platform?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${ALERT_DB_USERNAME:root}
+    password: ${ALERT_DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+server:
+  port: 8083
+  servlet:
+    context-path: /api/alert
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: org.zc.alert.entity
+
+alert:
+  kafka:
+    topic: event-topic
+    consumer-group: alert-service-group
+    notification-topic: alert-notification-topic
+  cooldown:
+    default-seconds: 300
+  frequency:
+    window-seconds: 60
+    default-max-count: 10
