@@ -38,6 +38,10 @@ application-local.properties
 **/application-local.properties
 *-local.yml
 *-local.properties
+.ssh/
+*.pem
+*.key
+id_*
 
 # === AI Tools ===
 .agents/
